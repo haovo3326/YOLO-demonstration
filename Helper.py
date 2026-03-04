@@ -1,4 +1,5 @@
 import cv2
+import xml.etree.ElementTree as ET
 
 def resize(img, new_size):
     """
@@ -21,3 +22,25 @@ def normalize(img):
             New image
     """
     return img / 255.0
+
+def read_xml(path: str):
+    tree = ET.parse(path)
+    root = tree.getroot()
+    samples = []
+
+    size = root.find("size")
+    width = int(size.find("width").text)
+    height = int(size.find("height").text)
+    canvas = [width, height]
+
+    for obj in root.findall("object"):
+        name = obj.find("name").text
+        box = obj.find("bndbox")
+        xmin = int(box.find("xmin").text)
+        ymin = int(box.find("ymin").text)
+        xmax = int(box.find("xmax").text)
+        ymax = int(box.find("ymax").text)
+        sample = [name, xmin, ymin, xmax, ymax]
+        samples.append(sample)
+
+    return canvas, samples
