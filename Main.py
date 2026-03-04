@@ -26,8 +26,11 @@ for file in os.listdir(train_path):
 
 classes = 2
 grid_size = 7
-boxes = 3
+boxes = 2
 model = Model.YOLOModel(classes, grid_size, boxes)
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model = model.to(device)
+optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
 
 epochs = 100
 batch_size = 16
@@ -54,9 +57,10 @@ for epoch in range(epochs):
         # Batching data
         imgs = []
         annotations = []
-
         for xml_filepath in xml_filepaths_batch:
-            annotations = Helper.read_xml(xml_filepath)
+            samples = Helper.read_xml(xml_filepath)
+            annotations.append(samples)
+
         for jpg_filepath in jpg_filepaths_batch:
             img = cv2.imread(jpg_filepath)
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
@@ -68,10 +72,14 @@ for epoch in range(epochs):
         imgs = np.stack(imgs, axis = 0)
         imgs = torch.from_numpy(imgs).float()
         imgs = imgs.permute(0, 3, 1, 2)
-
+        imgs = imgs.to(device)
 
         # Fetching batch to model
         pred = model.forward(imgs)
+        pred = pred.view(batch_size, grid_size, grid_size, boxes, 5 + classes)
+        target = Helper.build_targets(annotations, classes, grid_size, boxes)
+        target = target.to(device)
+
 
         print(f"Batches {i + 1}/{batch_num} completed")
 

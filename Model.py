@@ -13,7 +13,7 @@ class YOLOModel(nn.Module):
         self.C = classes
         self.S = grid_size
         self.B = boxes
-        self.cell_out = self.B * 5 + self.C
+        self.cell_out = self.B * (5 + self.C)
 
         self.backbone = nn.Sequential(
             cba(3, 32),
