@@ -1,4 +1,3 @@
-import torch
 import torch.nn as nn
 
 def cba(in_ch, out_ch, k=3, s=1, p=1):
