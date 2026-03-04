@@ -38,6 +38,8 @@ input_size = 500
 sample_size = len(xml_filepaths)
 batch_num = math.ceil(sample_size / batch_size)
 
+best_loss = float("inf")
+
 for epoch in range(epochs):
     print(f"Epoch {epoch + 1}/{epochs} running...")
     pairs = list(zip(xml_filepaths, jpg_filepaths))
@@ -47,9 +49,12 @@ for epoch in range(epochs):
     xml_filepaths = list(xml_filepaths)
     jpg_filepaths = list(jpg_filepaths)
 
+    epoch_loss = 0
+
     for i, batch_start in enumerate(range(0, sample_size, batch_size)):
         print(f"Batches {i + 1}/{batch_num} preparing...")
-        batch_end = min(batch_start + batch_size, sample_size)
+        batch_end = batch_start + batch_size
+        if batch_end > sample_size: break
 
         xml_filepaths_batch = xml_filepaths[batch_start: batch_end]
         jpg_filepaths_batch = jpg_filepaths[batch_start: batch_end]
@@ -77,11 +82,23 @@ for epoch in range(epochs):
         # Fetching batch to model
         pred = model.forward(imgs)
         pred = pred.view(batch_size, grid_size, grid_size, boxes, 5 + classes)
-        target = Helper.build_targets(annotations, classes, grid_size, boxes)
+        target = Helper.build_targets(annotations, grid_size, boxes, classes)
         target = target.to(device)
+        loss = Helper.yolo_loss(pred, target)
+        optimizer.zero_grad()
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+        epoch_loss += loss.item()
+        print(f"Batch {i + 1}/{batch_num} loss = {loss.item():.4f}")
 
+    epoch_loss /= batch_num
+    if epoch_loss < best_loss:
+        old_loss = best_loss
+        best_loss = epoch_loss
+        torch.save(model.state_dict(), "YOLO-vsth.pth")
+        print(f"Best model saved: loss = {best_loss} < {old_loss}")
 
-        print(f"Batches {i + 1}/{batch_num} completed")
 
 
 
