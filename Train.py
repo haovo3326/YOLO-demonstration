@@ -86,7 +86,6 @@ for epoch in range(epochs):
         target = target.to(device)
         loss = Helper.yolo_loss(pred, target)
         optimizer.zero_grad()
-        optimizer.zero_grad()
         loss.backward()
         optimizer.step()
         epoch_loss += loss.item()
